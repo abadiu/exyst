@@ -1,49 +1,46 @@
 extends CharacterBody3D
 
+# Import the Players enum
+const Players = preload("res://scripts/game_enums.gd").Players
+
 # Unit properties
 @export var unit_name: String = "Soldier"
 @export var move_range: int = 3
 @export var health: int = 10
 @export var attack_power: int = 3
 
+# Player assignment
+@export var player: Players = Players.PLAYER_1
+
+# Reference to turn manager (explicitly defined)
+var turn_manager: Node = null
+
 # Grid position
 var grid_x: int = 0
 var grid_z: int = 0
 
 # Reference to the grid
-var grid
+var grid: Node = null
 
 func _ready():
-	# Set up visual appearance
+	# Set up visual appearance based on player
 	var material = StandardMaterial3D.new()
-	material.albedo_color = Color(0.9, 0.1, 0.1)  # Red for now
+	material.albedo_color = Color.RED if player == Players.PLAYER_1 else Color.BLUE
 	$MeshInstance3D.material_override = material
 
-# Move the unit to a new grid position
-func move_to_grid(x: int, z: int):
-	grid_x = x
-	grid_z = z
-	
+	# Ensure collision detection
+	$CollisionShape3D.disabled = false
+
+	# Set up initial position
 	if grid:
 		position = Vector3(
 			grid_x * grid.cell_size + grid.cell_size/2,
 			0.5,  # Half height of the unit
 			grid_z * grid.cell_size + grid.cell_size/2
 		)
-
-# Check if a grid position is within movement range
-func is_in_move_range(x: int, z: int) -> bool:
-	var distance = abs(x - grid_x) + abs(z - grid_z)
-	return distance <= move_range
-
-# Take damage
-func take_damage(amount: int) -> bool:
-	health -= amount
-	if health <= 0:
-		die()
-		return true
-	return false
 	
-	# Unit death
-func die():
-	queue_free()
+	# Register with turn manager
+	if turn_manager:
+		turn_manager.register_unit(self, player)
+
+# Rest of the script remains the same...
